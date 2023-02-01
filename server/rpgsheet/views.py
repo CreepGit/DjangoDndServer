@@ -6,7 +6,7 @@ import json
 def list_view(request):
     if request.method != 'GET':
         return JsonResponse({'error': 'Only get method is permitted'})
-    objects = CharacterInformation.objects.values("key","created_at","updated_at")
+    objects = CharacterInformation.objects.values("key","created_at","updated_at","name")
     return JsonResponse({
         "count": objects.count(),
         "characters": [*objects],
@@ -49,7 +49,7 @@ def post_view(request):
         return JsonResponse({'error': 'Password missing'})
     if not data:
         return JsonResponse({'error': 'Character data missing'})
-        
+
     query = CharacterInformation.objects.filter(key=key)
     if query.exists():
         obj = query.first()
@@ -58,10 +58,16 @@ def post_view(request):
         obj.data = data
         obj.save()
     else:
+        try:
+            open_data = json.loads(data)
+            name = open_data["characterInformation"]["name"]
+        except:
+            return JsonResponse({'error': 'Could not save account name'})
         CharacterInformation.objects.create(
             key=key,
             password=password,
             data=data,
+            name=name,
         )
     return JsonResponse({'ok': 'ok'})
 

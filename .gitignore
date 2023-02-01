@@ -52,3 +52,6 @@ docs/_build/
 
 # env
 share/
+
+# database
+server/db.sqlite3

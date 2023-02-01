@@ -1,17 +1,20 @@
-from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from rpgsheet.models import CharacterInformation
 import json
 # Create your views here.
 
 def list_view(request):
-    keys = CharacterInformation.objects.values_list("key", flat=True)
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only get method is permitted'})
+    objects = CharacterInformation.objects.values("key","created_at","updated_at")
     return JsonResponse({
-        "count": keys.count(),
-        "keys": [*keys],
+        "count": objects.count(),
+        "characters": [*objects],
     })
 
 def detail_view(request, key=None):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only get method is permitted'})
     if not key:
         return JsonResponse({'error': 'Key was not set to a value'})
     if len(key) < 5:
@@ -26,7 +29,9 @@ def detail_view(request, key=None):
     obj = obj.first()
     return JsonResponse({
         "key":obj.key,
-        "data":obj.data
+        "data":obj.data,
+        "created":obj.created_at,
+        "modified":obj.updated_at,
     })
 
 def post_view(request):
@@ -38,11 +43,13 @@ def post_view(request):
     data = body.get("data")
     if not key:
         return JsonResponse({'error': 'Key missing'})
+    if len(key) < 8:
+        return JsonResponse({'error': 'Key is too short'})
     if not password:
         return JsonResponse({'error': 'Password missing'})
     if not data:
         return JsonResponse({'error': 'Character data missing'})
-
+        
     query = CharacterInformation.objects.filter(key=key)
     if query.exists():
         obj = query.first()
